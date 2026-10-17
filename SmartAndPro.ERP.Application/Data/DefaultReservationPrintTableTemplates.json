@@ -1,0 +1,161 @@
+[
+  {
+    "name": "With Amount",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "referenceNumber", "displayName": "رقم المرجع", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "clientCompanyName", "displayName": "شركة العميل / العميل", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalDiscount", "displayName": "إجمالي الخصم", "dataType": "currency", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "netAmount", "displayName": "المبلغ الصافي", "dataType": "currency", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Normal Print",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "departureDate", "displayName": "تاريخ المغادرة", "dataType": "date", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "clientCompanyName", "displayName": "شركة العميل/العميل", "dataType": "string", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "اسم الفندق", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalRooms", "displayName": "إجمالي الغرف", "dataType": "number", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "reservationType", "displayName": "نوع الحجز", "dataType": "string", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "With Cost",
+    "description": "قوالب جديدة",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "الفندق", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "reservationType", "displayName": "نوع الحجز", "dataType": "string", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "reservationCompanyName", "displayName": "المورد", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "salesTotalWithVat", "displayName": "المبلغ الإجمالي للمبيعات شامل الضريبة", "dataType": "currency", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "costTotalWithVat", "displayName": "المبلغ الإجمالي للتكلفة شامل الضريبة", "dataType": "currency", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "With Cost - Gop",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "الفندق", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalDiscount", "displayName": "إجمالي الخصم", "dataType": "currency", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "salesTotalWithVat", "displayName": "المبلغ الإجمالي للمبيعات شامل الضريبة", "dataType": "currency", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "costTotalWithVat", "displayName": "المبلغ الإجمالي للتكلفة شامل الضريبة", "dataType": "currency", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "profitWithoutVat", "displayName": "صافي الربح بدون ضريبة", "dataType": "currency", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "gopPercentage", "displayName": "GOP %", "dataType": "number", "orderIndex": 7, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Paid",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "clientCompanyName", "displayName": "شركة العميل", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalAmount", "displayName": "المبلغ الإجمالي", "dataType": "currency", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentAmount", "displayName": "إجمالي الفاتورة", "dataType": "currency", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentPaid", "displayName": "المبلغ المدفوع", "dataType": "currency", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentRemain", "displayName": "المبلغ المتبقي", "dataType": "currency", "orderIndex": 7, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Paid Sum",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "clientCompanyName", "displayName": "شركة العميل", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentAmount", "displayName": "إجمالي الفاتورة", "dataType": "currency", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentPaid", "displayName": "المبلغ المدفوع", "dataType": "currency", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "paymentRemain", "displayName": "المبلغ المتبقي", "dataType": "currency", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Client Remarks",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "clientRemarks", "displayName": "ملاحظات العميل", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "departureDate", "displayName": "تاريخ المغادرة", "dataType": "date", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "اسم الفندق", "dataType": "string", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "roomType", "displayName": "نوع الغرفة", "dataType": "string", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Hotel Remarks",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "state", "displayName": "الحالة", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "departureDate", "displayName": "تاريخ المغادرة", "dataType": "date", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "اسم الفندق", "dataType": "string", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "roomType", "displayName": "نوع الغرفة", "dataType": "string", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelRemarks", "displayName": "ملاحظات الفندق", "dataType": "string", "orderIndex": 7, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Amount With Cost",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "state", "displayName": "الحالة", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "departureDate", "displayName": "تاريخ المغادرة", "dataType": "date", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "guestName", "displayName": "اسم النزيل", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "اسم الفندق", "dataType": "string", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "roomType", "displayName": "نوع الغرفة", "dataType": "string", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalRooms", "displayName": "إجمالي الغرف", "dataType": "number", "orderIndex": 7, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "averageRoomRate", "displayName": "متوسط سعر الغرفة", "dataType": "currency", "orderIndex": 8, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "salesTotalWithVat", "displayName": "المبلغ الإجمالي للمبيعات شامل الضريبة", "dataType": "currency", "orderIndex": 9, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "costTotalWithVat", "displayName": "المبلغ الإجمالي للتكلفة شامل الضريبة", "dataType": "currency", "orderIndex": 10, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  },
+  {
+    "name": "Amount Cost (D)",
+    "description": "",
+    "pageOrientation": "Landscape",
+    "displayOrder": 0,
+    "columns": [
+      { "columnName": "state", "displayName": "الحالة", "dataType": "string", "orderIndex": 0, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "referenceNumber", "displayName": "رقم الحجز", "dataType": "string", "orderIndex": 1, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "arrivalDate", "displayName": "تاريخ الوصول", "dataType": "date", "orderIndex": 2, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "departureDate", "displayName": "تاريخ المغادرة", "dataType": "date", "orderIndex": 3, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "hotelName", "displayName": "اسم الفندق", "dataType": "string", "orderIndex": 4, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalRooms", "displayName": "إجمالي الغرف", "dataType": "number", "orderIndex": 5, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "roomAmount", "displayName": "السعر الإجمالي لمبيعات الغرفة", "dataType": "currency", "orderIndex": 6, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "serviceAmount", "displayName": "مبلغ الخدمة", "dataType": "currency", "orderIndex": 7, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "totalTax", "displayName": "إجمالي الضريبة", "dataType": "currency", "orderIndex": 8, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "salesTotalWithVat", "displayName": "المبلغ الإجمالي للمبيعات شامل الضريبة", "dataType": "currency", "orderIndex": 9, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "roomCost", "displayName": "تكلفة الغرف", "dataType": "currency", "orderIndex": 10, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "serviceCost", "displayName": "تكلفة الخدمات", "dataType": "currency", "orderIndex": 11, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "costVat", "displayName": "ضريبة القيمة المضافة للتكلفة (15%)", "dataType": "currency", "orderIndex": 12, "isVisible": true, "width": 0, "alignment": "left" },
+      { "columnName": "costTotalWithVat", "displayName": "المبلغ الإجمالي للتكلفة شامل الضريبة", "dataType": "currency", "orderIndex": 13, "isVisible": true, "width": 0, "alignment": "left" }
+    ]
+  }
+]

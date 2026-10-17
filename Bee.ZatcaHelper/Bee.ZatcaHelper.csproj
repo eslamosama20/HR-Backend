@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>Bee.ZatcaHelper</RootNamespace>
+		<LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>Bee.ZatcaHelper</AssemblyName>
+        <PackageId>Bee.ZatcaHelper</PackageId>
+        <Version>1.0.6</Version>
+        <Authors>DevBee</Authors>
+        <Description>This nuget helps in integertation of systems to Zatca systems.</Description>
+        <Copyright>MIT</Copyright>
+        <PackageProjectUrl>https://github.com/fasilmarshooq/Bee.ZatcaHelper</PackageProjectUrl>
+        <PackageIconUrl>../Logo/Devbee-Logo.png</PackageIconUrl>
+        <RepositoryUrl>https://github.com/fasilmarshooq/Bee.ZatcaHelper</RepositoryUrl>
+        <PackageTags>Zatca, ZatcaHelper, ZatcaIntegration, Fatoora, Tax</PackageTags>
+        <Company>Bee.ZatcaHelper</Company>
+        <Product>Bee.ZatcaHelper</Product>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.2-beta2" />
+      <PackageReference Include="Serilog" Version="2.12.0" />
+      <PackageReference Include="System.Net.Http" Version="4.3.4" />
+      <PackageReference Include="System.Net.Http.Json" Version="7.0.0" />
+      <PackageReference Include="System.Security.Cryptography.Xml" Version="7.0.0-rc.1.22426.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="StandardInvoiceXml.xml" />
+      <EmbeddedResource Include="DebitNote.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="Standard_Invoice_Template.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+        <EmbeddedResource Include="Standard_Credit_Note_Template.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Standard_Debit_Note_Template.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Simplified_Invoice_Template.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Simplified_Credit_Note_Template.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Simplified_Debit_Note_Template.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+      <None Remove="Util\StandardInvoiceHashingTemplate.xsl" />
+      <EmbeddedResource Include="Util\StandardInvoiceHashingTemplate.xsl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="CreditNote.xml" />
+      <EmbeddedResource Include="CreditNote.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Zatca.EInvoice.SDK">
+        <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.dll</HintPath>
+      </Reference>
+      <Reference Include="Zatca.EInvoice.SDK.Contracts">
+        <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.Contracts.dll</HintPath>
+      </Reference>
+      <Reference Include="Zatca.EInvoice.SDK.Saxon">
+        <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.Saxon.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>

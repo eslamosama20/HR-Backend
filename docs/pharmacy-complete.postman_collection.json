@@ -1,0 +1,620 @@
+{
+  "info": {
+    "name": "Pharmacy — Complete API Collection",
+    "description": "الكولكشن الكامل لكل API الصيدلية في SmartAndPro ERP.\nيشمل: بحث الأدوية، الدُفعات، التأمين، المطالبات، الوصفات، المخزون، الإرجاع، التنبيهات، الأدوية المضبوطة.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001",
+      "description": "Base URL — غيّره لعنوان السيرفر"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN",
+      "description": "JWT Bearer Token من /api/auth/login"
+    },
+    {
+      "key": "store_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "description": "StoreDetailsId (Guid)"
+    },
+    {
+      "key": "prescription_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "description": "PharmacyPrescription Id (Guid)"
+    },
+    {
+      "key": "insurance_company_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "description": "PharmacyInsuranceCompany Id (Guid)"
+    },
+    {
+      "key": "claim_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "description": "PharmacyInsuranceClaim Id (Guid)"
+    },
+    {
+      "key": "item_int_id",
+      "value": "123456789",
+      "description": "Item int ID (FNV-1a hash من ItemCode) — يُستخرج من نتيجة Search Items"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1 — Items Lookup",
+      "description": "بحث الأدوية، عرض الدُفعات، فحص المخزون",
+      "item": [
+        {
+          "name": "1.1 Search Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/items/lookup?searchTerm=باراسيتامول&storeId={{store_id}}&isControlled=false&maxResults=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "items", "lookup"],
+              "query": [
+                { "key": "searchTerm", "value": "باراسيتامول" },
+                { "key": "storeId", "value": "{{store_id}}" },
+                { "key": "isControlled", "value": "false" },
+                { "key": "maxResults", "value": "20" }
+              ]
+            },
+            "description": "بحث في كتالوج الأدوية مع الكمية المتاحة من PharmacyBatch.\nيدعم الفلترة بالاسم (عربي/إنجليزي) أو ReferenceCode."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"items\": [\n    {\n      \"itemId\": 123456789,\n      \"itemCode\": \"MED-001\",\n      \"tradeName\": \"Paracetamol 500mg\",\n      \"scientificName\": \"باراسيتامول\",\n      \"strength\": null,\n      \"manufacturer\": null,\n      \"dosageForm\": null,\n      \"unitPrice\": 0.0,\n      \"stock\": 150,\n      \"availabilityStatus\": \"available\",\n      \"isControlled\": false,\n      \"requiresBatch\": true,\n      \"allowNegative\": false,\n      \"barcode\": null\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "1.2 Get Item Batches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/items/{{item_int_id}}/batches?storeId={{store_id}}&activeOnly=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "items", "{{item_int_id}}", "batches"],
+              "query": [
+                { "key": "storeId", "value": "{{store_id}}" },
+                { "key": "activeOnly", "value": "true" }
+              ]
+            },
+            "description": "دُفعات صنف معين في مخزن محدد.\nالـ itemId هو int ID مولَّد بـ FNV-1a hash — يُستخرج من نتيجة Search Items."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"itemId\": 123456789,\n  \"itemName\": \"Paracetamol 500mg\",\n  \"batches\": [\n    {\n      \"batchId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n      \"batchNo\": \"BAT-2024-001\",\n      \"expiryDate\": \"2026-12-31T00:00:00Z\",\n      \"availableQuantity\": 100,\n      \"unitPrice\": 0.0,\n      \"isExpired\": false,\n      \"isExpiringSoon\": false,\n      \"status\": \"active\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "1.3 Check Stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": 123456789,\n  \"storeId\": \"{{store_id}}\",\n  \"requestedQty\": 5.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/items/check-stock",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "items", "check-stock"]
+            },
+            "description": "فحص توافر الكمية قبل صرف الوصفة."
+          },
+          "response": [
+            {
+              "name": "200 — Full",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"isAvailable\": true, \"availableQty\": 100, \"availabilityStatus\": \"full\", \"alternatives\": [] }"
+            },
+            {
+              "name": "200 — Partial",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"isAvailable\": true, \"availableQty\": 3, \"availabilityStatus\": \"partial\", \"alternatives\": [] }"
+            },
+            {
+              "name": "200 — Unavailable",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"isAvailable\": false, \"availableQty\": 0, \"availabilityStatus\": \"unavailable\", \"alternatives\": [] }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 — Insurance Verify & Approval",
+      "description": "التحقق من التغطية التأمينية وإرسال رقم الموافقة على الوصفة",
+      "item": [
+        {
+          "name": "2.1 Verify Insurance Coverage",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"insuranceCompanyId\": \"{{insurance_company_id}}\",\n  \"memberNo\": \"INS-2026-00123\",\n  \"items\": [\n    { \"itemId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\", \"quantity\": 2.0, \"unitPrice\": 25.50 },\n    { \"itemId\": \"4ba85f64-5717-4562-b3fc-2c963f66afb7\", \"quantity\": 1.0, \"unitPrice\": 80.00 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance", "verify"]
+            },
+            "description": "التحقق من تغطية شركة التأمين لأصناف الوصفة.\nيُرجع نسبة التغطية والمبالغ المحسوبة."
+          },
+          "response": [
+            {
+              "name": "200 — Active",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"isActive\": true,\n  \"rejectionReason\": null,\n  \"coveragePercentage\": 80.0,\n  \"patientSharePercentage\": 20.0,\n  \"totalAmount\": 131.0,\n  \"coveredAmount\": 104.80,\n  \"patientPayableAmount\": 26.20,\n  \"itemsCoverage\": [\n    { \"itemId\": \"3fa85f64...\", \"isCovered\": true, \"coveragePercentage\": 80.0, \"amountCovered\": 40.80 }\n  ]\n}"
+            },
+            {
+              "name": "200 — Company Not Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"isActive\": false, \"rejectionReason\": \"Insurance company not found\", \"coveragePercentage\": 0 }"
+            }
+          ]
+        },
+        {
+          "name": "2.2 Submit Insurance Approval",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prescriptionId\": \"{{prescription_id}}\",\n  \"approvalNo\": \"APP-2026-XYZ123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance/submit-approval",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance", "submit-approval"]
+            },
+            "description": "تسجيل رقم الموافقة التأمينية على الوصفة.\nيُحدِّث InsuranceApprovalNo و InsuranceStatus='approved'."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"success\": true, \"message\": \"Approval submitted successfully\", \"status\": \"approved\" }"
+            },
+            {
+              "name": "200 — Prescription Not Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"success\": false, \"message\": \"Prescription not found\", \"status\": \"failed\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 — Insurance Claims (CRUD)",
+      "description": "إدارة مطالبات التأمين — إنشاء، استعراض، تحديث الحالة",
+      "item": [
+        {
+          "name": "3.1 Get All Claims",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance-claims?storeDetailsId={{store_id}}&status=pending&page=1&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance-claims"],
+              "query": [
+                { "key": "storeDetailsId", "value": "{{store_id}}", "description": "اختياري" },
+                { "key": "status", "value": "pending", "description": "pending | approved | partially_approved | rejected | need_docs" },
+                { "key": "insurer", "value": "", "description": "اسم شركة التأمين (اختياري)" },
+                { "key": "search", "value": "", "description": "بحث نصي" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "استعراض قائمة مطالبات التأمين مع فلترة."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"items\": [\n    {\n      \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n      \"claimNo\": \"CLM-20260507-ABC123\",\n      \"rxNo\": \"RX-2026-1041\",\n      \"patientName\": \"سارة محمود\",\n      \"insurer\": \"بوبا\",\n      \"status\": \"pending\",\n      \"nphiesStatus\": \"\",\n      \"totalAmount\": 450.00,\n      \"approvedAmount\": 0\n    }\n  ],\n  \"totalCount\": 1,\n  \"page\": 1,\n  \"pageSize\": 20\n}"
+            }
+          ]
+        },
+        {
+          "name": "3.2 Get Claim by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance-claims/{{claim_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance-claims", "{{claim_id}}"]
+            },
+            "description": "تفاصيل مطالبة تأمين واحدة."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"id\": \"3fa85f64...\", \"claimNo\": \"CLM-...\", ... }"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{ \"message\": \"Claim not found\" }"
+            }
+          ]
+        },
+        {
+          "name": "3.3 Create Claim",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"claimNo\": \"\",\n  \"rxNo\": \"RX-2026-1041\",\n  \"patientName\": \"سارة محمود\",\n  \"insurer\": \"بوبا\",\n  \"totalAmount\": 450.00,\n  \"approvedAmount\": 0,\n  \"status\": \"Submitted\",\n  \"referenceNo\": \"\",\n  \"notes\": \"\",\n  \"storeDetailsId\": \"{{store_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance-claims",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance-claims"]
+            },
+            "description": "إنشاء مطالبة تأمين جديدة.\nإذا تُرك claimNo فارغاً يُولَّد تلقائياً: CLM-YYYYMMDD-XXXXXX."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{ \"id\": \"3fa85f64...\", \"claimNo\": \"CLM-20260508-ABCD12\", ... }"
+            }
+          ]
+        },
+        {
+          "name": "3.4 Update Claim Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"approvedAmount\": 360.00,\n  \"referenceNo\": \"BUPA-44701\",\n  \"notes\": \"تمت الموافقة بالكامل\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/insurance-claims/{{claim_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "insurance-claims", "{{claim_id}}", "status"]
+            },
+            "description": "تحديث حالة مطالبة التأمين.\nالقيم المسموحة: Submitted | approved | partially_approved | rejected | need_docs"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{ \"message\": \"Claim status updated\" }"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{ \"message\": \"Claim not found\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 — Inventory & Batches",
+      "description": "استعراض المخزون الصيدلاني والدُفعات",
+      "item": [
+        {
+          "name": "4.1 Get Pharmacy Inventory (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/inventory?storeId={{store_id}}&includeExpired=false&onlyAvailable=true&page=1&pageSize=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "inventory"],
+              "query": [
+                { "key": "storeId", "value": "{{store_id}}" },
+                { "key": "searchTerm", "value": "", "description": "بحث بالاسم أو الكود" },
+                { "key": "includeExpired", "value": "false" },
+                { "key": "onlyAvailable", "value": "true" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            },
+            "description": "واجهة موحدة للمخزون الصيدلاني. ترتيب FEFO (أقرب انتهاء أولاً)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"total\": 100,\n  \"page\": 1,\n  \"pageSize\": 50,\n  \"data\": [\n    {\n      \"itemCode\": \"MED-001\",\n      \"itemName\": \"Paracetamol 500mg\",\n      \"storeName\": \"المخزن الرئيسي\",\n      \"availableQuantity\": 150,\n      \"batchNo\": \"BAT-2024-001\",\n      \"expiryDate\": \"2026-12-31T00:00:00Z\",\n      \"status\": \"Active\",\n      \"preferredBatch\": \"BAT-2024-001\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "4.2 Get All Batches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/batches?storeId={{store_id}}&search=&page=1&pageSize=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "batches"],
+              "query": [
+                { "key": "storeId", "value": "{{store_id}}", "description": "اختياري" },
+                { "key": "search", "value": "", "description": "بحث بالاسم أو الكود أو رقم الدفعة" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            },
+            "description": "استعراض كل الدُفعات الصيدلانية مع فلترة."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"total\": 200,\n  \"page\": 1,\n  \"pageSize\": 50,\n  \"data\": [\n    {\n      \"id\": \"3fa85f64...\",\n      \"itemCode\": \"MED-001\",\n      \"itemName\": \"Paracetamol 500mg\",\n      \"batchNo\": \"BAT-2024-001\",\n      \"expiryDate\": \"2026-12-31\",\n      \"quantity\": 150,\n      \"storeName\": \"المخزن الرئيسي\",\n      \"status\": \"Active\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 — Prescriptions",
+      "description": "إدارة الوصفات الطبية",
+      "item": [
+        {
+          "name": "5.1 Get Prescriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/prescriptions?status=new&page=1&pageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "prescriptions"],
+              "query": [
+                { "key": "status", "value": "new", "description": "new | review | dispensing | ready | delivered" },
+                { "key": "priority", "value": "", "description": "normal | urgent" },
+                { "key": "search", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Create Prescription",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rxNo\": \"RX-2026-9999\",\n  \"patientName\": \"أحمد علي\",\n  \"doctorName\": \"د. محمد سالم\",\n  \"priority\": \"normal\",\n  \"paymentType\": \"cash\",\n  \"insuranceName\": \"\",\n  \"notes\": \"\",\n  \"items\": [\n    {\n      \"itemCode\": \"MED-001\",\n      \"itemName\": \"Paracetamol 500mg\",\n      \"requestedQuantity\": 2,\n      \"instructions\": \"مرتين يومياً\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/prescriptions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "prescriptions"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Update Prescription Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"dispensing\", \"notes\": \"\" }"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/prescriptions/{{prescription_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "prescriptions", "{{prescription_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "5.4 Mark as Ready",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"notes\": \"تم التجهيز\", \"confirmedBy\": \"\" }"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/prescriptions/{{prescription_id}}/mark-ready",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "prescriptions", "{{prescription_id}}", "mark-ready"]
+            }
+          }
+        },
+        {
+          "name": "5.5 Cancel Prescription",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"reason\": \"طلب المريض\" }"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/prescriptions/{{prescription_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "prescriptions", "{{prescription_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 — NPHIES / CCHI Claims",
+      "description": "مطالبات NPHIES للتأمين الصحي الوطني",
+      "item": [
+        {
+          "name": "6.1 Get NPHIES Claims",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/nphies-claims?storeDetailsId={{store_id}}&page=1&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "nphies-claims"],
+              "query": [
+                { "key": "storeDetailsId", "value": "{{store_id}}" },
+                { "key": "status", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "استعراض مطالبات NPHIES مع معلومات الحالة."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 — Controlled Drugs",
+      "description": "سجلات الأدوية المضبوطة",
+      "item": [
+        {
+          "name": "7.1 Get Controlled Drug Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/controlled-drugs?page=1&pageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "controlled-drugs"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 — Alerts",
+      "description": "تنبيهات الصيدلية",
+      "item": [
+        {
+          "name": "8.1 Get Active Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/alerts?isActive=true&page=1&pageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "alerts"],
+              "query": [
+                { "key": "isActive", "value": "true" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9 — Returns",
+      "description": "مرتجعات الأدوية",
+      "item": [
+        {
+          "name": "9.1 Get Returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/returns?page=1&pageSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "returns"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "9.2 Create Return",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prescriptionId\": \"{{prescription_id}}\",\n  \"itemCode\": \"MED-001\",\n  \"quantity\": 1,\n  \"reason\": \"لا يحتاجه المريض\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pharmacy/returns",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "pharmacy", "returns"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AUTH — Get Token",
+      "description": "للحصول على JWT Token لاستخدامه في باقي الطلبات",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your_password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "أرسل الـ token الناتج كـ Bearer token في متغير {{token}}."
+          }
+        }
+      ]
+    }
+  ]
+}

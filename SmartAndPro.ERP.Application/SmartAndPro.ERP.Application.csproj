@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bee.ZatcaHelper\Bee.ZatcaHelper.csproj" />
+    <ProjectReference Include="..\SmartAndPro.ERP.Infrastructure\SmartAndPro.ERP.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="EPPlus" Version="7.4.2" />
+    <PackageReference Include="Humanizer" Version="2.14.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="QuestPDF" Version="2025.5.1" />
+    <PackageReference Include="Tafqeet" Version="2.1.1" />
+    <PackageReference Include="TimeZoneConverter" Version="7.0.0" />
+    <PackageReference Include="ZXing.Net" Version="0.16.9" />
+    <PackageReference Include="Hangfire" Version="1.8.18" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.18" />
+    <PackageReference Include="ZKTecoProfessionalSDK" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\Dtos\Accounting\DetailSalesClass\" />
+    <Folder Include="Common\Dtos\Accounting\HeaderSalesClass\" />
+    <Folder Include="Common\Dtos\Accounting\MainPurchaseClass\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Common\Dtos\Accounting\DetailSalesClass\DetailSalesClassResponseDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\HeaderPurchaseClass\HeaderPurchaseClassFiltersDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\HeaderPurchaseClass\HeaderPurchaseClassPostDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\HeaderSalesClass\HeaderSalesClassFiltersDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\HeaderSalesClass\HeaderSalesClassPostDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\HeaderSalesClass\HeaderSalesClassPutDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\MainPurchaseClass\MainPurchaseClassPostDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\MainPurchaseClass\MainPurchaseClassPutDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\MainSalesClass\MainSalesClassPostDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\MainSalesClass\MainSalesClassPutDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\RootPurchaseClass\RootPurchaseClassFiltersDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\RootPurchaseClass\RootPurchaseClassPutDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\RootSalesClass\RootSalesClassFiltersDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\RootSalesClass\RootSalesClassPostDto.cs" />
+    <Compile Remove="Common\Dtos\Accounting\RootSalesClass\RootSalesClassPutDto.cs" />
+    <Compile Remove="Enforcers\ProductDetailsEnforcer.cs" />
+    <Compile Remove="Services\Accounting\DetailSalesClassService.cs" />
+    <Compile Remove="Services\Accounting\MainPurchaseClassService.cs" />
+    <Compile Remove="Services\Accounting\RootPurchaseClassService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Common\Dtos\Accounting\DetailSalesClass\DetailSalesClassPostDto.cs" />
+    <Compile Remove="Services\Accounting\MainSalesClassService.cs" />
+    <Compile Remove="Common\Dtos\Accounting\DetailPurchaseClass\DetailPurchaseClassPutDto.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Zatca.EInvoice.SDK">
+      <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.dll</HintPath>
+    </Reference>
+    <Reference Include="Zatca.EInvoice.SDK.Contracts">
+      <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.Contracts.dll</HintPath>
+    </Reference>
+    <Reference Include="Zatca.EInvoice.SDK.Saxon">
+      <HintPath>..\ZatcaSDK_3.4.0\Zatca.EInvoice.SDK.Saxon.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Data\DefaultReservationPrintTableTemplates.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

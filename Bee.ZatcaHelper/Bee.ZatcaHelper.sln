@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bee.ZatcaHelper", "Bee.ZatcaHelper.csproj", "{C489CBA6-7538-9814-0078-AD4B29232EAC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C489CBA6-7538-9814-0078-AD4B29232EAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C489CBA6-7538-9814-0078-AD4B29232EAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C489CBA6-7538-9814-0078-AD4B29232EAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C489CBA6-7538-9814-0078-AD4B29232EAC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E801C824-BBEA-4E54-B703-8E6B213B00A3}
+	EndGlobalSection
+EndGlobal

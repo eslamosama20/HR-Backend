@@ -1,0 +1,470 @@
+{
+  "info": {
+    "_postman_id": "production-readiness-validation-2026",
+    "name": "Production Readiness Validation Collection",
+    "description": "Validation collection for verifying cashier held orders, checkout idempotency request-hash conflict checks, payment HMAC webhook security, ZATCA TLV QR integration, recipe deduction and refund reversal controls, and pharmacy prescription workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5001" },
+    { "key": "authToken", "value": "" },
+    { "key": "storeId", "value": "73eeb854-1206-4af1-9564-08ddce0a8073" },
+    { "key": "sessionId", "value": "74" },
+    { "key": "heldOrderId", "value": "" },
+    { "key": "prescriptionId", "value": "" },
+    { "key": "claimId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0 — Login (Obtain Auth Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json && json.token) {",
+              "    pm.collectionVariables.set('authToken', json.token);",
+              "    console.log('authToken saved:', json.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"cashier@test.com\",\n  \"password\": \"P@ssword123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/Account/Login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "Account", "Login"]
+        },
+        "description": "Authenticate user to get a JWT bearer token. Replace email and password with test user credentials."
+      },
+      "response": []
+    },
+    {
+      "name": "1a — Create Held Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "if (json && json.id) {",
+              "    pm.collectionVariables.set('heldOrderId', json.id);",
+              "    console.log('heldOrderId saved:', json.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"storeDetailsId\": \"{{storeId}}\",\n  \"terminalId\": \"TERM-POS-01\",\n  \"sessionId\": {{sessionId}},\n  \"customerName\": \"John Doe\",\n  \"notes\": \"Wait for customer to fetch card\",\n  \"totalAmount\": 150.00,\n  \"lines\": [\n    {\n      \"productId\": \"88eeb854-1206-4af1-9564-08ddce0a8080\",\n      \"productUnitId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 75.00,\n      \"vatRate\": 15.00,\n      \"vatAmount\": 22.50,\n      \"totalAmount\": 172.50,\n      \"itemName\": \"Test Medicine\",\n      \"itemCode\": \"MED-1002\"\n    }\n  ]\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/held-orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "held-orders"]
+        },
+        "description": "Create a new held order (cart session save) for the current cashier session."
+      },
+      "response": []
+    },
+    {
+      "name": "1b — Get Held Orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response is list', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(Array.isArray(json)).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/held-orders?storeDetailsId={{storeId}}&sessionId={{sessionId}}&terminalId=TERM-POS-01",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "held-orders"],
+          "query": [
+            { "key": "storeDetailsId", "value": "{{storeId}}" },
+            { "key": "sessionId", "value": "{{sessionId}}" },
+            { "key": "terminalId", "value": "TERM-POS-01" }
+          ]
+        },
+        "description": "Fetch active held orders for a given store, session, and terminal."
+      },
+      "response": []
+    },
+    {
+      "name": "1c — Delete Held Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/held-orders/{{heldOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "held-orders", "{{heldOrderId}}"]
+        },
+        "description": "Delete a held order (flag IsActive = false)."
+      },
+      "response": []
+    },
+    {
+      "name": "1d — Restore Held Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/held-orders/{{heldOrderId}}?restore=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "held-orders", "{{heldOrderId}}"],
+          "query": [
+            { "key": "restore", "value": "true" }
+          ]
+        },
+        "description": "Restore a previously deleted held order (flag IsActive = true)."
+      },
+      "response": []
+    },
+    {
+      "name": "2a — POS Checkout (First Request)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Success is true', function() {",
+              "    pm.expect(json.success).to.be.true;",
+              "});",
+              "pm.test('ZatcaQrCode is returned', function() {",
+              "    pm.expect(json.zatcaQrCode).to.not.be.undefined;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "idemp-key-test-2026-001" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"invoiceDate\": \"2026-06-03T12:00:00Z\",\n  \"cashierSessionId\": {{sessionId}},\n  \"storeDetailsId\": \"{{storeId}}\",\n  \"customerId\": null,\n  \"customerName\": \"Walk-in Guest\",\n  \"items\": [\n    {\n      \"itemId\": 1,\n      \"itemCode\": \"268caee2-0134-46b5-a7ac-337f11201a3b\",\n      \"itemName\": \"Mackerel Fish\",\n      \"quantity\": 1,\n      \"unitPrice\": 10.00,\n      \"discountAmount\": 0.00,\n      \"taxPercentage\": 15.00,\n      \"taxAmount\": 1.50,\n      \"totalAmount\": 11.50\n    }\n  ],\n  \"subtotal\": 10.00,\n  \"discountAmount\": 0.00,\n  \"taxPercentage\": 15.00,\n  \"taxAmount\": 1.50,\n  \"totalAmount\": 11.50,\n  \"paymentMethod\": 0,\n  \"paidAmount\": 20.00,\n  \"changeAmount\": 8.50\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/checkout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "checkout"]
+        },
+        "description": "Standard checkout request with an Idempotency-Key. Generates a base64 ZATCA QR code in the response."
+      },
+      "response": []
+    },
+    {
+      "name": "2b — POS Checkout (Duplicate - Key Match & Payload Match)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Returns exact same cached response', function() {",
+              "    pm.expect(json.success).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "idemp-key-test-2026-001" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"invoiceDate\": \"2026-06-03T12:00:00Z\",\n  \"cashierSessionId\": {{sessionId}},\n  \"storeDetailsId\": \"{{storeId}}\",\n  \"customerId\": null,\n  \"customerName\": \"Walk-in Guest\",\n  \"items\": [\n    {\n      \"itemId\": 1,\n      \"itemCode\": \"268caee2-0134-46b5-a7ac-337f11201a3b\",\n      \"itemName\": \"Mackerel Fish\",\n      \"quantity\": 1,\n      \"unitPrice\": 10.00,\n      \"discountAmount\": 0.00,\n      \"taxPercentage\": 15.00,\n      \"taxAmount\": 1.50,\n      \"totalAmount\": 11.50\n    }\n  ],\n  \"subtotal\": 10.00,\n  \"discountAmount\": 0.00,\n  \"taxPercentage\": 15.00,\n  \"taxAmount\": 1.50,\n  \"totalAmount\": 11.50,\n  \"paymentMethod\": 0,\n  \"paidAmount\": 20.00,\n  \"changeAmount\": 8.50\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/checkout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "checkout"]
+        },
+        "description": "Send identical checkout body with the same Idempotency-Key. Server returns 200 OK with cached response."
+      },
+      "response": []
+    },
+    {
+      "name": "2c — POS Checkout (Conflict - Key Match but Payload Mismatch)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 409 Conflict', function () {",
+              "    pm.response.to.have.status(409);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "idemp-key-test-2026-001" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"invoiceDate\": \"2026-06-03T12:00:00Z\",\n  \"cashierSessionId\": {{sessionId}},\n  \"storeDetailsId\": \"{{storeId}}\",\n  \"customerId\": null,\n  \"customerName\": \"Conflicting Guest Name\",\n  \"items\": [\n    {\n      \"itemId\": 1,\n      \"itemCode\": \"268caee2-0134-46b5-a7ac-337f11201a3b\",\n      \"itemName\": \"Mackerel Fish\",\n      \"quantity\": 1,\n      \"unitPrice\": 10.00,\n      \"discountAmount\": 0.00,\n      \"taxPercentage\": 15.00,\n      \"taxAmount\": 1.50,\n      \"totalAmount\": 11.50\n    }\n  ],\n  \"subtotal\": 10.00,\n  \"discountAmount\": 0.00,\n  \"taxPercentage\": 15.00,\n  \"taxAmount\": 1.50,\n  \"totalAmount\": 11.50,\n  \"paymentMethod\": 0,\n  \"paidAmount\": 20.00,\n  \"changeAmount\": 8.50\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/cashier/checkout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cashier", "checkout"]
+        },
+        "description": "Send a mismatched body (changed customer name) with the same Idempotency-Key. Server rejects with 409 Conflict."
+      },
+      "response": []
+    },
+    {
+      "name": "3a — Paymob Webhook (Incorrect HMAC Signature Reject)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401 Unauthorized', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"obj\": {\n    \"id\": 99912345,\n    \"pending\": false,\n    \"amount_cents\": 15000,\n    \"success\": true,\n    \"is_auth\": false,\n    \"is_capture\": false,\n    \"is_standalone_payment\": true,\n    \"is_voided\": false,\n    \"is_refunded\": false,\n    \"is_3d_secure\": true,\n    \"order\": { \"id\": 87654321 }\n  },\n  \"type\": \"TRANSACTION\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/webhooks/paymob?hmac=invalid_hmac_secret_signature",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "webhooks", "paymob"],
+          "query": [
+            { "key": "hmac", "value": "invalid_hmac_secret_signature" }
+          ]
+        },
+        "description": "Simulates a Paymob webhook transaction notification with an incorrect HMAC query parameter. Rejected with 401."
+      },
+      "response": []
+    },
+    {
+      "name": "4a — Mark Prescription Ready",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test('Status is ready', function () {",
+              "    pm.expect(json.status).to.equal('ready');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pharmacy/prescriptions/{{prescriptionId}}/ready",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1/pharmacy", "prescriptions", "{{prescriptionId}}", "ready"]
+        },
+        "description": "Change status of a prescription to 'ready' after batch verification and inventory stock availability validation checks."
+      },
+      "response": []
+    },
+    {
+      "name": "4b — Poll NPHIES Claim Status",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 or 400', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pharmacy/prescriptions/{{prescriptionId}}/poll-nphies",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1/pharmacy", "prescriptions", "{{prescriptionId}}", "poll-nphies"]
+        },
+        "description": "Poll CCHI/NPHIES for the adjudication status of the claim associated with the specified prescription."
+      },
+      "response": []
+    },
+    {
+      "name": "4c — Restricted Drug Dispense (No Permission check)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Access denied or bad request', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([403, 400]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"itemCode\": \"DRUG-1002\",\n  \"itemName\": \"Morphine 10mg\",\n  \"quantity\": 1.0,\n  \"batchNo\": \"B-MOR-01\",\n  \"storeDetailsId\": \"{{storeId}}\",\n  \"patientName\": \"Jane Doe\",\n  \"doctorName\": \"Dr. House\",\n  \"pharmacistName\": \"Pharmacist Dave\",\n  \"authorizationNo\": \"AUTH-9921\",\n  \"dispenseReason\": \"Post-operative pain relief\",\n  \"restrictionType\": \"Narcotics\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pharmacy/restricted-drugs/dispense",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1/pharmacy", "restricted-drugs", "dispense"]
+        },
+        "description": "Dispense a restricted narcotic drug. Returns 403 if user lacks 'Pharmacy.RestrictedDrugs.Dispense' permission and is not Admin."
+      },
+      "response": []
+    },
+    {
+      "name": "4d — SFDA Trace submission",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"itemCode\": \"DRUG-1002\",\n  \"sfdaCode\": \"SFDA-66381-01\",\n  \"serialNo\": \"SN-99881-22A\",\n  \"gtin\": \"06281000998812\",\n  \"expiryDate\": \"2028-12-31T00:00:00Z\",\n  \"batchNo\": \"B-MOR-01\",\n  \"transactionType\": \"DISPENSE\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/pharmacy/sfda/trace",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1/pharmacy", "sfda", "trace"]
+        },
+        "description": "Submit a drug trace event to SFDA. Currently logs and returns 200 OK."
+      },
+      "response": []
+    }
+  ]
+}

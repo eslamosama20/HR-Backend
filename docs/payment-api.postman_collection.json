@@ -1,0 +1,255 @@
+{
+  "info": {
+    "_postman_id": "payment-orchestration-api-2026",
+    "name": "Payment Orchestration API",
+    "description": "3 endpoints for the payment orchestration system.\n\nSupported methods: card | mada | apple_pay | tabby | tamara | stc_pay\n\n**Usage:**\n1. Set `baseUrl` and `authToken` variables.\n2. Run 'Get Payment Methods' to see what's available.\n3. Run 'Create Payment' → copy the `paymentUrl` to redirect your user.\n4. Webhook endpoints are called by payment providers automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl",   "value": "http://localhost:5001" },
+    { "key": "authToken", "value": "" },
+    { "key": "paymentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1 — Get Payment Methods",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/methods?country=SA",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "methods"],
+          "query": [
+            { "key": "country", "value": "SA", "description": "Country code (SA = Saudi Arabia)" }
+          ]
+        },
+        "description": "Returns all available payment methods for a given country.\n\nNo authentication required.\n\n**Response:**\n```json\n[\n  { \"key\": \"card\",      \"label\": \"Credit / Debit Card\", \"provider\": \"paymob\" },\n  { \"key\": \"mada\",      \"label\": \"Mada\",               \"provider\": \"paymob\" },\n  { \"key\": \"apple_pay\", \"label\": \"Apple Pay\",          \"provider\": \"paymob\" },\n  { \"key\": \"tabby\",     \"label\": \"Tabby (تابي)\",       \"provider\": \"tabby\"  },\n  { \"key\": \"tamara\",    \"label\": \"Tamara (تمارا)\",     \"provider\": \"tamara\" },\n  { \"key\": \"stc_pay\",   \"label\": \"STC Pay\",            \"provider\": \"hyperpay\" }\n]\n```"
+      },
+      "response": []
+    },
+    {
+      "name": "2a — Create Payment (card)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json && json.internalId) {",
+              "    pm.collectionVariables.set('paymentId', json.internalId);",
+              "    console.log('paymentId saved:', json.internalId);",
+              "}",
+              "if (json && json.paymentUrl) {",
+              "    console.log('Open this URL to complete payment:', json.paymentUrl);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-001\",\n  \"amount\": 250.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"card\",\n  \"customerName\": \"أحمد محمد\",\n  \"customerEmail\": \"ahmed@example.com\",\n  \"customerPhone\": \"+966500000000\",\n  \"description\": \"طلب رقم ORD-2026-001\",\n  \"callbackUrl\": \"https://yourapp.com/payment/callback\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates a card payment via **Paymob**.\n\nReturns an iframe `paymentUrl` — redirect the user to this URL to enter card details.\n\n**Response 200:**\n```json\n{\n  \"paymentUrl\": \"https://accept.paymob.com/api/acceptance/iframes/...\",\n  \"externalId\": \"12345678\",\n  \"provider\": \"paymob\",\n  \"status\": \"Pending\",\n  \"internalId\": \"guid\"\n}\n```"
+      },
+      "response": []
+    },
+    {
+      "name": "2b — Create Payment (mada)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-002\",\n  \"amount\": 180.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"mada\",\n  \"customerName\": \"سارة علي\",\n  \"customerEmail\": \"sara@example.com\",\n  \"customerPhone\": \"+966511111111\",\n  \"description\": \"طلب رقم ORD-2026-002\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates a **Mada** payment via Paymob.\nSame flow as card — uses the Mada integration ID."
+      },
+      "response": []
+    },
+    {
+      "name": "2c — Create Payment (apple_pay)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-003\",\n  \"amount\": 99.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"apple_pay\",\n  \"customerName\": \"خالد السيد\",\n  \"customerPhone\": \"+966522222222\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates an **Apple Pay** session via Paymob."
+      },
+      "response": []
+    },
+    {
+      "name": "2d — Create Payment (tabby — BNPL)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-004\",\n  \"amount\": 400.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"tabby\",\n  \"customerName\": \"محمد الحربي\",\n  \"customerEmail\": \"harbi@example.com\",\n  \"customerPhone\": \"+966533333333\",\n  \"description\": \"تقسيط عبر تابي\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates a **Tabby** BNPL payment (4 interest-free installments).\n\n⚠ Currently MOCK — returns a simulated checkout URL."
+      },
+      "response": []
+    },
+    {
+      "name": "2e — Create Payment (tamara — BNPL)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-005\",\n  \"amount\": 600.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"tamara\",\n  \"customerName\": \"نورة المطيري\",\n  \"customerEmail\": \"noura@example.com\",\n  \"customerPhone\": \"+966544444444\",\n  \"description\": \"تقسيط عبر تمارا\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates a **Tamara** BNPL payment.\n\n⚠ Currently MOCK — returns a simulated checkout URL."
+      },
+      "response": []
+    },
+    {
+      "name": "2f — Create Payment (stc_pay)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderReference\": \"ORD-2026-006\",\n  \"amount\": 150.00,\n  \"currency\": \"SAR\",\n  \"paymentMethod\": \"stc_pay\",\n  \"customerName\": \"فهد الشمري\",\n  \"customerPhone\": \"+966555555555\",\n  \"description\": \"دفع عبر STC Pay\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments"]
+        },
+        "description": "Initiates an **STC Pay** checkout via HyperPay.\n\n⚠ Currently MOCK — returns a simulated checkout URL."
+      },
+      "response": []
+    },
+    {
+      "name": "3 — Webhook — Paymob",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"obj\": {\n    \"id\": 12345678,\n    \"pending\": false,\n    \"amount_cents\": 25000,\n    \"success\": true,\n    \"is_auth\": false,\n    \"is_capture\": false,\n    \"is_standalone_payment\": true,\n    \"is_voided\": false,\n    \"is_refunded\": false,\n    \"is_3d_secure\": true,\n    \"order\": { \"id\": 87654321 }\n  },\n  \"type\": \"TRANSACTION\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/webhooks/paymob",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "webhooks", "paymob"]
+        },
+        "description": "Simulates a Paymob webhook notification.\n\nThe server parses `obj.id` as ExternalId and `obj.success` as the status.\nA matching `Payment` record will be updated to `Paid` or `Failed`.\n\n**Always returns 200 OK.**"
+      },
+      "response": []
+    },
+    {
+      "name": "3 — Webhook — Tabby",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"tab_session_abc123\",\n  \"status\": \"AUTHORIZED\",\n  \"amount\": 400.00,\n  \"currency\": \"SAR\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/webhooks/tabby",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "webhooks", "tabby"]
+        },
+        "description": "Simulates a Tabby webhook notification."
+      },
+      "response": []
+    },
+    {
+      "name": "3 — Webhook — Tamara",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"tam_order_xyz789\",\n  \"status\": \"approved\",\n  \"total_amount\": { \"amount\": 600, \"currency\": \"SAR\" }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/webhooks/tamara",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "webhooks", "tamara"]
+        },
+        "description": "Simulates a Tamara webhook notification."
+      },
+      "response": []
+    },
+    {
+      "name": "3 — Webhook — HyperPay (STC Pay)",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"hp_checkout_def456\",\n  \"status\": \"paid\",\n  \"amount\": 150.00,\n  \"currency\": \"SAR\",\n  \"paymentBrand\": \"STC_PAY\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/webhooks/hyperpay",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "webhooks", "hyperpay"]
+        },
+        "description": "Simulates a HyperPay webhook notification for STC Pay."
+      },
+      "response": []
+    }
+  ]
+}
