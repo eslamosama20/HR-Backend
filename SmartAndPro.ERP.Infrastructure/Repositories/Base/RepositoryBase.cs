@@ -84,6 +84,7 @@ public class RepositoryBase<T, TContext> : IRepository<T> where T : class where 
         }
         catch (Exception ex)
         {
+            response.Message = ex.InnerException != null ? $"{ex.Message} --> {ex.InnerException.Message}" : ex.Message;
             _logger.LogError(ex.Message, entity);
             LogService.LogError(ex);
             // Detach the entity (and related tracked entries) so lingering Added-state entities

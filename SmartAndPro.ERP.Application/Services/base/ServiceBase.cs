@@ -218,7 +218,7 @@ public abstract class ServiceBase<TEntity, TPostDto, TPutDto, TResponseDto , TFi
             var operation = await _repository.Add(entity);
             
             if (operation.ErrorCode != ErrorCodes.Success)
-                return new OperationResponse<TResponseDto>(operation.ErrorCode, null);
+                return new OperationResponse<TResponseDto>(operation.ErrorCode, null, message: operation.Message);
             
             var responseData = _mapper.Map<TResponseDto>(operation.Data);
             return new OperationResponse<TResponseDto>(ErrorCodes.Success, responseData);
@@ -226,6 +226,7 @@ public abstract class ServiceBase<TEntity, TPostDto, TPutDto, TResponseDto , TFi
         catch (Exception ex)
         {
             LogService.LogError(ex);
+            result.Message = ex.InnerException != null ? $"{ex.Message} --> {ex.InnerException.Message}" : ex.Message;
         }
         return result;
     }
