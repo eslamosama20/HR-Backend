@@ -145,7 +145,8 @@ public class HRMappingProfiles : Profile
         CreateMap<LeaveApplicationPostDto, LeaveApplication>();
         CreateMap<LeaveApplicationPutDto, LeaveApplication>();
         CreateMap<LeaveApplication, LeaveApplicationResponseDto>()
-            .ForMember(x => x.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
+            .ForMember(x => x.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null))
+            .ForMember(x => x.EmployeeCode, opt => opt.MapFrom(src => src.Employee != null ? (src.Employee.ReferenceNumber ?? src.Employee.DeviceId) : null));
 
         // CompanyDocument
         CreateMap<CompanyDocumentPostDto, CompanyDocument>();

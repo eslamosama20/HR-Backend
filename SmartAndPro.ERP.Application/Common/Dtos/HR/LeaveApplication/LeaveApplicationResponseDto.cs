@@ -8,6 +8,7 @@ public class LeaveApplicationResponseDto
     public string ReferenceNumber { get; set; }
     public Guid EmployeeId { get; set; }
     public string EmployeeName { get; set; }
+    public string? EmployeeCode { get; set; }
     public LeaveType LeaveType { get; set; }
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
