@@ -6,6 +6,8 @@ public class SalarySlipResponseDto
     public string ReferenceNumber { get; set; }
     public Guid EmployeeId { get; set; }
     public string EmployeeName { get; set; }
+    public string? DeviceId { get; set; }
+    public string? JobTitle { get; set; }
     public int Month { get; set; }
     public int Year { get; set; }
     public decimal BasicSalary { get; set; }

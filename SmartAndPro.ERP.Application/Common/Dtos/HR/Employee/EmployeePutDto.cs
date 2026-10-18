@@ -48,6 +48,27 @@ public class EmployeePutDto
     
     public string? FactoryType { get; set; }
     
+    // Falcon Factory fields
+    public string? Department { get; set; }
+    public string? Workshop { get; set; }
+    public string? JobTitle { get; set; }
+    public string? NationalId { get; set; }
+    public string? Address { get; set; }
+    public string? Governorate { get; set; }
+    public DateOnly? BirthDate { get; set; }
+    public string? InsuranceNumber { get; set; }
+    public string? InsuranceTitle { get; set; }
+
+    // Detailed Allowances & Bonuses
+    public decimal? LivingAllowance { get; set; } = 0;
+    public decimal? MealAllowance { get; set; } = 0;
+    public decimal? TransportAllowance { get; set; } = 0;
+    public decimal? HousingAllowance { get; set; } = 0;
+    public decimal? ExtraIncrease { get; set; } = 0;
+    public decimal? SupervisionBonus { get; set; } = 0;
+    public decimal? MasteryBonus { get; set; } = 0;
+    public decimal? RegularityBonus { get; set; } = 0;
+
     public string? DeviceId { get; set; }
 
 }

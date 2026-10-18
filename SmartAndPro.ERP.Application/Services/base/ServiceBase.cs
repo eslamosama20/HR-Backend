@@ -69,15 +69,19 @@ public abstract class ServiceBase<TEntity, TPostDto, TPutDto, TResponseDto , TFi
             var totalRecords = await query.CountAsync();
 
             // 2. Apply pagination directly in the query and protect memory
-            pageNumber ??= 1;
-            pageSize ??= 50;
-            if (pageSize > 100) pageSize = 100;
-            if (pageSize < 1) pageSize = 1; // Prevent pageSize=0 bypass (data exfiltration / DoS)
-
-            if (pageNumber > 0 && pageSize > 0)
+            if (pageNumber.HasValue || pageSize.HasValue)
             {
+                pageNumber ??= 1;
+                pageSize ??= 50;
+                if (pageSize > 1000) pageSize = 1000;
+                if (pageSize < 1) pageSize = 1;
+
                 var skip = (pageNumber.Value - 1) * pageSize.Value;
                 query = query.ApplySort(sortField, sortOrder).Skip(skip).Take(pageSize.Value);
+            }
+            else
+            {
+                query = query.ApplySort(sortField, sortOrder);
             }
             
             var operationData = await query.ToListAsync();

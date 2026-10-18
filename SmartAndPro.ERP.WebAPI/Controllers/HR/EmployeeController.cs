@@ -30,7 +30,7 @@ public class EmployeeController : Controller
         IActionResult result = NoContent();
         try
         {
-            var responseDate = await _service.GetAllAsync(new ParamFilter());
+            var responseDate = await _service.GetAllAsync(new ParamFilter(), pageNumber, pageSize);
             result = responseDate.HandleResult();
         }
         catch (Exception ex)

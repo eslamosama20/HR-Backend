@@ -45,16 +45,21 @@ public class PaymentCalculatorService
                     a.AttendanceDate >= startDateOnly &&
                     a.AttendanceDate <= endDateOnly))
                 .ToListAsync();
-            var checkInLogsQuery = await checkInLogRepository.Filter(c => c.LogType == LogType.IN
-                                                                          && c.Time >= start
+            var checkInLogsQuery = await checkInLogRepository.Filter(c => c.Time >= start
                                                                           && c.Time <= end);
 
             var checkInLogs = await checkInLogsQuery.Data
                 .ToListAsync();
 
-            var logLookup = checkInLogs
+            var inLogLookup = checkInLogs
+                .Where(c => c.LogType == LogType.IN)
                 .GroupBy(c => (c.EmployeeId, c.Time.Date))
                 .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Time).First());
+
+            var outLogLookup = checkInLogs
+                .Where(c => c.LogType == LogType.OUT)
+                .GroupBy(c => (c.EmployeeId, c.Time.Date))
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Time).First());
 
             var loansQuery = await _repositoriesFactory.GetRepository<MonthlyLoan>().GetAll();
             var loans = await loansQuery.Data
@@ -83,18 +88,31 @@ public class PaymentCalculatorService
                 decimal suppRate = emp.SupplementaryRate;
                 decimal monthlyInsurance = emp.MonthlyInsurance ?? 0m;
 
-                // 1) Total base salary + any bonuses
+                // 1) Total base salary + any bonuses & Falcon allowances
                 decimal totalBonuses = bonuses
                     .Where(b => b.EmployeeId == emp.Id)
                     .Sum(b => b.Amount);
-                decimal totalSalary = monthlyRate + suppRate + totalBonuses;
+
+                decimal falconAllowances = emp.LivingAllowance +
+                                           emp.MealAllowance +
+                                           emp.TransportAllowance +
+                                           emp.HousingAllowance +
+                                           emp.ExtraIncrease +
+                                           emp.SupervisionBonus +
+                                           emp.MasteryBonus +
+                                           emp.RegularityBonus;
+
+                decimal totalSalary = monthlyRate + suppRate + falconAllowances + totalBonuses;
 
                 // 2) Hourly rate assuming 30 days/month, 8h per day (or use emp.Shift.HoursPerDay)
+                // In Falcon factory, overtime base includes Basic + Living + Meal + Transport allowances
                 const int workDaysPerMonth = 30;
                 var shiftStart = emp.Shift.StartTime; // TimeOnly
                 var shiftEnd = emp.Shift.EndTime; // TimeOnly
                 double hoursPerDay = Math.Round((shiftEnd - shiftStart).TotalHours, 2);
-                decimal hourlyRate = monthlyRate / (workDaysPerMonth * (decimal)hoursPerDay);
+                if (hoursPerDay <= 0) hoursPerDay = 8;
+                decimal overtimeBaseSalary = monthlyRate + emp.LivingAllowance + emp.MealAllowance + emp.TransportAllowance;
+                decimal hourlyRate = overtimeBaseSalary / (workDaysPerMonth * (decimal)hoursPerDay);
 
                 decimal dailyRate = monthlyRate / workDaysPerMonth;
 
@@ -173,30 +191,9 @@ public class PaymentCalculatorService
 
                 bool hasZeroAttendance = (attendedDaysCount == 0 && halfDaysCount == 0);
 
-                // If month is ongoing, future unworked days deducted 1:1
-                var today = DateOnly.FromDateTime(DateTime.Today);
+                // Do not deduct future unworked days as absence for an ongoing month;
+                // only deduct actual registered absences/leaves up to today.
                 int futureUnworkedDays = 0;
-                if (endDateOnly > today && today >= effectiveHireDate)
-                {
-                    if (isMidMonthHire)
-                    {
-                        var futureEnd = endDateOnly.Day > 30 ? new DateOnly(endDateOnly.Year, endDateOnly.Month, 30) : endDateOnly;
-                        for (var d = today.AddDays(1); d <= futureEnd; d = d.AddDays(1))
-                        {
-                            futureUnworkedDays++;
-                        }
-                    }
-                    else
-                    {
-                        for (var d = today.AddDays(1); d <= endDateOnly; d = d.AddDays(1))
-                        {
-                            if (!weeklyDayOffs.Contains(d.DayOfWeek))
-                            {
-                                futureUnworkedDays++;
-                            }
-                        }
-                    }
-                }
 
                 decimal absentDays;
                 decimal totalAbsentPenalty;
@@ -237,26 +234,58 @@ public class PaymentCalculatorService
 
                 decimal absentCount = absentDays;
 
-                // Lateness: With permission (1.0x) vs Without permission (LateRateMultiplier)
+                // Lateness & Early Exit: With permission (1.0x) vs Without permission (LateRateMultiplier)
                 double totalLateHoursWithoutPermission = 0;
                 double totalLateHoursWithPermission = 0;
-                foreach (var a in emp.AttendanceRecords.Where(a => a.AttendanceFlag == AttendanceFlag.LateEntry || a.AttendanceFlag == AttendanceFlag.LateWithPermission))
+
+                var attendedRecords = emp.AttendanceRecords.Where(a =>
+                    a.AttendanceFlag == AttendanceFlag.Present ||
+                    a.AttendanceFlag == AttendanceFlag.LateEntry ||
+                    a.AttendanceFlag == AttendanceFlag.LateWithPermission ||
+                    a.AttendanceFlag == AttendanceFlag.EarlyExit ||
+                    a.AttendanceFlag == AttendanceFlag.HalfDay);
+
+                foreach (var a in attendedRecords)
                 {
-                    var scheduledStart = a.AttendanceDate.ToDateTime(emp.Shift.StartTime);
-                    double lateSpanHours = 0;
+                    var recordDate = a.AttendanceDate.ToDateTime(TimeOnly.MinValue).Date;
+                    int gracePeriod = emp.Shift.GracePeriodInMinutes ?? 0;
 
-                    if (logLookup.TryGetValue((emp.Id, a.AttendanceDate.ToDateTime(TimeOnly.MinValue).Date), out var log))
+                    // 1) Late entry check (IN log vs Shift StartTime)
+                    if (inLogLookup.TryGetValue((emp.Id, recordDate), out var inLog))
                     {
-                        lateSpanHours = Math.Max(0, (log.Time - scheduledStart).TotalHours);
+                        var scheduledStart = a.AttendanceDate.ToDateTime(emp.Shift.StartTime);
+                        var delayMinutes = (inLog.Time - scheduledStart).TotalMinutes;
+                        if (delayMinutes > gracePeriod)
+                        {
+                            double lateSpanHours = Math.Max(0, (inLog.Time - scheduledStart).TotalHours);
+                            if (a.AttendanceFlag == AttendanceFlag.LateWithPermission || (a.Reason != null && a.Reason.Contains("بإذن")))
+                            {
+                                totalLateHoursWithPermission += lateSpanHours;
+                            }
+                            else
+                            {
+                                totalLateHoursWithoutPermission += lateSpanHours;
+                            }
+                        }
                     }
 
-                    if (a.AttendanceFlag == AttendanceFlag.LateWithPermission)
+                    // 2) Early exit check (OUT log vs Shift EndTime)
+                    if (outLogLookup.TryGetValue((emp.Id, recordDate), out var outLog))
                     {
-                        totalLateHoursWithPermission += lateSpanHours;
-                    }
-                    else
-                    {
-                        totalLateHoursWithoutPermission += lateSpanHours;
+                        var scheduledEnd = a.AttendanceDate.ToDateTime(emp.Shift.EndTime);
+                        var earlyMinutes = (scheduledEnd - outLog.Time).TotalMinutes;
+                        if (earlyMinutes > gracePeriod)
+                        {
+                            double earlySpanHours = Math.Max(0, (scheduledEnd - outLog.Time).TotalHours);
+                            if (a.Reason != null && a.Reason.Contains("بإذن"))
+                            {
+                                totalLateHoursWithPermission += earlySpanHours;
+                            }
+                            else
+                            {
+                                totalLateHoursWithoutPermission += earlySpanHours;
+                            }
+                        }
                     }
                 }
 
@@ -276,8 +305,27 @@ public class PaymentCalculatorService
                     .Where(p => p.EmployeeId == emp.Id)
                     .Sum(p => p.Amount);
 
+                // Regularity bonus deduction according to Falcon Factory attendance bylaw:
+                decimal regularityDeduction = 0m;
+                if (emp.RegularityBonus > 0)
+                {
+                    int unexcusedCount = unexcusedAbsences.Count;
+                    int excusedCount = activeMonthLeaves.Count(a => !weeklyDayOffs.Contains(a.AttendanceDate.DayOfWeek));
+                    int penaltyCount = penalties.Count(p => p.EmployeeId == emp.Id);
+
+                    decimal unexcusedPenaltyPct = unexcusedCount == 1 ? 0.50m : (unexcusedCount >= 2 ? 1.00m : 0m);
+                    decimal excusedPenaltyPct = excusedCount == 2 ? 0.50m : (excusedCount >= 3 ? 1.00m : 0m);
+                    decimal behaviorPenaltyPct = penaltyCount == 1 ? 0.25m : (penaltyCount == 2 ? 0.50m : (penaltyCount >= 3 ? 1.00m : 0m));
+
+                    decimal totalPct = Math.Min(1.00m, unexcusedPenaltyPct + excusedPenaltyPct + behaviorPenaltyPct);
+                    regularityDeduction = Math.Round(emp.RegularityBonus * totalPct, 2);
+                }
+
+                decimal otherAllowances = emp.HousingAllowance + emp.ExtraIncrease + emp.SupervisionBonus;
+
                 // 6) Sum up what to subtract
                 decimal totalSubtractions = totalAbsentPenalty
+                                            + regularityDeduction
                                             + totalLateEntryPenalty
                                             + totalLoans
                                             + monthlyInsurance
@@ -293,15 +341,30 @@ public class PaymentCalculatorService
                     factory1Payments.Add(new Factory1PaymentResult
                     {
                         EmployeeId = emp.Id,
+                        DeviceId = emp.DeviceId ?? emp.ReferenceNumber,
                         EmployeeName = emp.Name,
                         EmployeeTypeName = type.Code,
+                        Workshop = emp.Workshop,
+                        Department = emp.Department,
+                        JobTitle = !string.IsNullOrEmpty(emp.JobTitle) ? emp.JobTitle : type.Code,
                         MonthlyRate = Math.Round(monthlyRate, 2),
                         SupplementaryRate = Math.Round(suppRate, 2),
+                        LivingAllowance = Math.Round(emp.LivingAllowance, 2),
+                        MealAllowance = Math.Round(emp.MealAllowance, 2),
+                        TransportAllowance = Math.Round(emp.TransportAllowance, 2),
+                        HousingAllowance = Math.Round(emp.HousingAllowance, 2),
+                        ExtraIncrease = Math.Round(emp.ExtraIncrease, 2),
+                        SupervisionBonus = Math.Round(emp.SupervisionBonus, 2),
+                        MasteryBonus = Math.Round(emp.MasteryBonus, 2),
+                        RegularityBonus = Math.Round(emp.RegularityBonus, 2),
+                        OtherAllowances = Math.Round(otherAllowances, 2),
+                        OvertimeBaseSalary = Math.Round(overtimeBaseSalary, 2),
                         TotalBonuses = Math.Round(totalBonuses, 2),
                         TotalSalary = Math.Round(totalSalary, 2),
                         AbsentDaysCount = Math.Round(absentCount, 2),
                         DailyRate = Math.Round(dailyRate, 2),
                         TotalAbsentPenalty = Math.Round(totalAbsentPenalty, 2),
+                        RegularityDeduction = regularityDeduction,
                         TotalLateHours = Math.Round(totalLateHours, 2),
                         HourlyRate = Math.Round(hourlyRate, 2),
                         TotalLateEntryPenalty = Math.Round(totalLateEntryPenalty, 2),
@@ -317,15 +380,30 @@ public class PaymentCalculatorService
                     factory2Payments.Add(new Factory2PaymentResult
                     {
                         EmployeeId = emp.Id,
+                        DeviceId = emp.DeviceId ?? emp.ReferenceNumber,
                         EmployeeName = emp.Name,
                         EmployeeTypeName = type.Code,
+                        Workshop = emp.Workshop,
+                        Department = emp.Department,
+                        JobTitle = !string.IsNullOrEmpty(emp.JobTitle) ? emp.JobTitle : type.Code,
                         MonthlyRate = Math.Round(monthlyRate, 2),
                         SupplementaryRate = Math.Round(suppRate, 2),
+                        LivingAllowance = Math.Round(emp.LivingAllowance, 2),
+                        MealAllowance = Math.Round(emp.MealAllowance, 2),
+                        TransportAllowance = Math.Round(emp.TransportAllowance, 2),
+                        HousingAllowance = Math.Round(emp.HousingAllowance, 2),
+                        ExtraIncrease = Math.Round(emp.ExtraIncrease, 2),
+                        SupervisionBonus = Math.Round(emp.SupervisionBonus, 2),
+                        MasteryBonus = Math.Round(emp.MasteryBonus, 2),
+                        RegularityBonus = Math.Round(emp.RegularityBonus, 2),
+                        OtherAllowances = Math.Round(otherAllowances, 2),
+                        OvertimeBaseSalary = Math.Round(overtimeBaseSalary, 2),
                         TotalBonuses = Math.Round(totalBonuses, 2),
                         TotalSalary = Math.Round(totalSalary, 2),
                         AbsentDaysCount = Math.Round(absentCount, 2),
                         DailyRate = Math.Round(dailyRate, 2),
                         TotalAbsentPenalty = Math.Round(totalAbsentPenalty, 2),
+                        RegularityDeduction = regularityDeduction,
                         TotalLateHours = Math.Round(totalLateHours, 2),
                         HourlyRate = Math.Round(hourlyRate, 2),
                         TotalLateEntryPenalty = Math.Round(totalLateEntryPenalty, 2),
@@ -341,15 +419,30 @@ public class PaymentCalculatorService
                     factory3Payments.Add(new Factory3PaymentResult
                     {
                         EmployeeId = emp.Id,
+                        DeviceId = emp.DeviceId ?? emp.ReferenceNumber,
                         EmployeeName = emp.Name,
                         EmployeeTypeName = type.Code,
+                        Workshop = emp.Workshop,
+                        Department = emp.Department,
+                        JobTitle = !string.IsNullOrEmpty(emp.JobTitle) ? emp.JobTitle : type.Code,
                         MonthlyRate = Math.Round(monthlyRate, 2),
                         SupplementaryRate = Math.Round(suppRate, 2),
+                        LivingAllowance = Math.Round(emp.LivingAllowance, 2),
+                        MealAllowance = Math.Round(emp.MealAllowance, 2),
+                        TransportAllowance = Math.Round(emp.TransportAllowance, 2),
+                        HousingAllowance = Math.Round(emp.HousingAllowance, 2),
+                        ExtraIncrease = Math.Round(emp.ExtraIncrease, 2),
+                        SupervisionBonus = Math.Round(emp.SupervisionBonus, 2),
+                        MasteryBonus = Math.Round(emp.MasteryBonus, 2),
+                        RegularityBonus = Math.Round(emp.RegularityBonus, 2),
+                        OtherAllowances = Math.Round(otherAllowances, 2),
+                        OvertimeBaseSalary = Math.Round(overtimeBaseSalary, 2),
                         TotalBonuses = Math.Round(totalBonuses, 2),
                         TotalSalary = Math.Round(totalSalary, 2),
                         AbsentDaysCount = Math.Round(absentCount, 2),
                         DailyRate = Math.Round(dailyRate, 2),
                         TotalAbsentPenalty = Math.Round(totalAbsentPenalty, 2),
+                        RegularityDeduction = regularityDeduction,
                         TotalLateHours = Math.Round(totalLateHours, 2),
                         HourlyRate = Math.Round(hourlyRate, 2),
                         TotalLateEntryPenalty = Math.Round(totalLateEntryPenalty, 2),
@@ -423,44 +516,55 @@ public class PaymentCalculatorService
                 double hoursPerDay = Math.Round((shift.EndTime - shift.StartTime).TotalHours, 2);
                 decimal hourlyRate = monthlyRate / (workDaysPerMonth * (decimal)hoursPerDay);
 
-                // Manually recorded overtime
-                decimal manualOvertime = overtimeRecords
+                // Recorded / synced overtime in OvertimeHours table
+                var empOvertime = overtimeRecords
                     .Where(o => o.EmployeeId == emp.Id)
-                    .Sum(o => o.HoursCount);
+                    .ToList();
 
-                // Automatically calculated from check-in logs
+                decimal recordedOvertime = empOvertime.Sum(o => o.HoursCount);
+                var recordedDates = empOvertime.Select(o => o.Date).ToHashSet();
+
+                // Automatically calculated from check-in logs ONLY for days not already in OvertimeHours
                 var empLogs = checkInLogs
                     .Where(l => l.EmployeeId == emp.Id)
-                    .GroupBy(l => l.Time.Date);
+                    .GroupBy(l => DateOnly.FromDateTime(l.Time));
 
                 decimal autoOvertime = 0;
                 foreach (var dayLogs in empLogs)
                 {
+                    var curDate = dayLogs.Key;
+                    if (recordedDates.Contains(curDate))
+                        continue; // Already recorded in OvertimeHours, avoid double counting!
+
                     var logs = dayLogs.OrderBy(l => l.Time).ToList();
                     var lastOut = logs.LastOrDefault(l => l.LogType == LogType.OUT);
+                    if (lastOut == null && logs.Count > 1)
+                        lastOut = logs.Last();
 
                     if (lastOut != null)
                     {
+                        var shiftEnd = emp.Shift.EndTime;
                         var scheduledEnd = DateTime.SpecifyKind(
-                            DateOnly.FromDateTime(lastOut.Time).ToDateTime(emp.Shift.EndTime), DateTimeKind.Unspecified);
+                            curDate.ToDateTime(shiftEnd), DateTimeKind.Unspecified);
 
                         var overtimeSpan = lastOut.Time - scheduledEnd;
 
-                        // If worked more than 30 minutes after scheduled end time
-                        if (overtimeSpan.TotalMinutes > 30)
+                        // If worked more than 15 minutes after scheduled end time
+                        if (overtimeSpan.TotalMinutes > 15)
                         {
-                            autoOvertime += (decimal)(overtimeSpan.TotalHours);
+                            autoOvertime += Math.Round((decimal)overtimeSpan.TotalHours, 2);
                         }
                     }
                 }
 
                 decimal overtimeMultiplier = emp.OvertimeRateMultiplier > 0 ? emp.OvertimeRateMultiplier : 1.5m;
-                decimal totalOvertimeHours = manualOvertime + autoOvertime;
+                decimal totalOvertimeHours = recordedOvertime + autoOvertime;
                 decimal overtimePayment = Math.Round(totalOvertimeHours * overtimeMultiplier * hourlyRate, 2);
 
                 var resultItem = new FactoryOvertimePaymentResult
                 {
                     EmployeeId = emp.Id,
+                    DeviceId = emp.DeviceId,
                     EmployeeName = emp.Name,
                     EmployeeTypeName = type.Code,
                     MonthlyRate = Math.Round(monthlyRate, 2),

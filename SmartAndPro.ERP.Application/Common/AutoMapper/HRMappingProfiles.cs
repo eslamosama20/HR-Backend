@@ -186,6 +186,8 @@ public class HRMappingProfiles : Profile
         CreateMap<SalarySlipPostDto, SalarySlip>();
         CreateMap<SalarySlipPutDto, SalarySlip>();
         CreateMap<SalarySlip, SalarySlipResponseDto>()
-            .ForMember(x => x.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
+            .ForMember(x => x.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null))
+            .ForMember(x => x.DeviceId, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.DeviceId : null))
+            .ForMember(x => x.JobTitle, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.JobTitle : null));
     }
 }

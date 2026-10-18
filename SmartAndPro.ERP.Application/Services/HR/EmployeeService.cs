@@ -3,6 +3,7 @@ using SmartAndPro.ERP.Application.Common.Dtos.HR.Attendance;
 using SmartAndPro.ERP.Application.Common.Dtos.HR.Employee;
 using SmartAndPro.ERP.Application.Common.Dtos.HR.EmploymentType;
 using SmartAndPro.ERP.Application.Common.Dtos.HR.Shift;
+using SmartAndPro.ERP.Application.Common.Extensions;
 using SmartAndPro.ERP.Application.Services.@base;
 using SmartAndPro.ERP.Domains.Entities.HR;
 using SmartAndPro.ERP.Domains.Enums;
@@ -10,6 +11,7 @@ using SmartAndPro.ERP.Infrastructure.Repositories;
 using SmartAndPro.ERP.SharedKernel.Entities.Configurations;
 using SmartAndPro.ERP.SharedKernel.Entities.Contracts;
 using SmartAndPro.ERP.SharedKernel.Enums;
+using SmartAndPro.ERP.SharedKernel.Utilities;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +38,72 @@ public class EmployeeService
         _repositoriesFactory = repositoriesFactory;
         _appSettings = appSettings;
         _mapper = mapper;
+    }
+
+    public override async Task<OperationResponse<List<EmployeeResponseDto>>> GetAllAsync(
+        ParamFilter filters, int? pageNumber = null, int? pageSize = null, string? sortField = null, int? sortOrder = null)
+    {
+        try
+        {
+            var repo = _repositoriesFactory.GetRepository<Employee>();
+            var operation = await repo.GetAll();
+            if (operation.ErrorCode != ErrorCodes.Success)
+                return new OperationResponse<List<EmployeeResponseDto>>(operation.ErrorCode, null);
+
+            var query = operation.Data
+                .Include(x => x.EmploymentType)
+                .Include(x => x.Shift)
+                .AsQueryable();
+
+            if (filters.Filters != null && filters.Filters.Count > 0)
+            {
+                foreach (var filter in filters.Filters)
+                {
+                    query = query.WhereDynamic(filter.Key, filter.Value);
+                }
+            }
+            if (!string.IsNullOrEmpty(filters.Search))
+            {
+                query = query.ApplyGlobalSearch(filters.Search);
+            }
+
+            var totalRecords = await query.CountAsync();
+
+            if (pageNumber.HasValue || pageSize.HasValue)
+            {
+                pageNumber ??= 1;
+                pageSize ??= 50;
+                if (pageSize > 1000) pageSize = 1000;
+                if (pageSize < 1) pageSize = 1;
+
+                var skip = (pageNumber.Value - 1) * pageSize.Value;
+                query = query.ApplySort(sortField, sortOrder).Skip(skip).Take(pageSize.Value);
+            }
+            else
+            {
+                query = query.ApplySort(sortField, sortOrder);
+            }
+
+            var entities = await query.ToListAsync();
+            var responseData = _mapper.Map<List<EmployeeResponseDto>>(entities);
+
+            if (pageNumber.HasValue && pageSize.HasValue)
+            {
+                return new OperationResponse<List<EmployeeResponseDto>>(
+                    ErrorCodes.Success,
+                    responseData,
+                    totalCount: totalRecords,
+                    isPaginated: true
+                );
+            }
+
+            return new OperationResponse<List<EmployeeResponseDto>>(ErrorCodes.Success, responseData);
+        }
+        catch (Exception ex)
+        {
+            LogService.LogError(ex);
+            return new OperationResponse<List<EmployeeResponseDto>>(ErrorCodes.GeneralFail, null);
+        }
     }
 
     public override async Task<OperationResponse<EmployeeResponseDto>> GetAsync(Guid id)
@@ -82,6 +150,23 @@ public class EmployeeService
                 MonthlyRate = x.MonthlyRate,
                 SupplementaryRate = x.SupplementaryRate,
                 FactoryType = x.FactoryType != null ? x.FactoryType.ToString() : null,
+                Department = x.Department,
+                Workshop = x.Workshop,
+                JobTitle = x.JobTitle,
+                NationalId = x.NationalId,
+                Address = x.Address,
+                Governorate = x.Governorate,
+                BirthDate = x.BirthDate,
+                InsuranceNumber = x.InsuranceNumber,
+                InsuranceTitle = x.InsuranceTitle,
+                LivingAllowance = x.LivingAllowance,
+                MealAllowance = x.MealAllowance,
+                TransportAllowance = x.TransportAllowance,
+                HousingAllowance = x.HousingAllowance,
+                ExtraIncrease = x.ExtraIncrease,
+                SupervisionBonus = x.SupervisionBonus,
+                MasteryBonus = x.MasteryBonus,
+                RegularityBonus = x.RegularityBonus,
                 MonthlyInsurance = x.MonthlyInsurance,
                 LeaveBalance = x.LeaveBalance,
                 RemainingLeaveBalance = x.LeaveBalance - x.AttendanceRecords.Count(a => a.AttendanceFlag == AttendanceFlag.OnLeaveWithPermission),
@@ -208,6 +293,23 @@ public class EmployeeService
         existingEmployee.LeaveBalance = request.LeaveBalance;
         existingEmployee.MonthlyRate = request.MonthlyRate;
         existingEmployee.SupplementaryRate = request.SupplementaryRate;
+        existingEmployee.Department = request.Department;
+        existingEmployee.Workshop = request.Workshop;
+        existingEmployee.JobTitle = request.JobTitle;
+        existingEmployee.NationalId = request.NationalId;
+        existingEmployee.Address = request.Address;
+        existingEmployee.Governorate = request.Governorate;
+        existingEmployee.BirthDate = request.BirthDate;
+        existingEmployee.InsuranceNumber = request.InsuranceNumber;
+        existingEmployee.InsuranceTitle = request.InsuranceTitle;
+        existingEmployee.LivingAllowance = request.LivingAllowance ?? 0;
+        existingEmployee.MealAllowance = request.MealAllowance ?? 0;
+        existingEmployee.TransportAllowance = request.TransportAllowance ?? 0;
+        existingEmployee.HousingAllowance = request.HousingAllowance ?? 0;
+        existingEmployee.ExtraIncrease = request.ExtraIncrease ?? 0;
+        existingEmployee.SupervisionBonus = request.SupervisionBonus ?? 0;
+        existingEmployee.MasteryBonus = request.MasteryBonus ?? 0;
+        existingEmployee.RegularityBonus = request.RegularityBonus ?? 0;
         existingEmployee.OvertimeRateMultiplier = request.OvertimeRateMultiplier ?? 1.5m;
         existingEmployee.AbsentRateMultiplier = request.AbsentRateMultiplier ?? 1.5m;
         existingEmployee.LateRateMultiplier = request.LateRateMultiplier ?? 1.5m;

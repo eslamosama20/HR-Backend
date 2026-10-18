@@ -113,4 +113,19 @@ public class OvertimeHoursController : Controller
 
         return result;
     }
+
+    [HttpPost("sync-from-fingerprint")]
+    public async Task<IActionResult> SyncFromFingerprint()
+    {
+        try
+        {
+            var count = await _service.SyncFromCheckInLogsAsync();
+            return Ok(new { message = $"تم سحب وتحديث {count} حركة إضافي من البصمة بنجاح", count });
+        }
+        catch (Exception ex)
+        {
+            LogService.LogError(ex);
+            return StatusCode(500, new { message = "حدث خطأ أثناء سحب حركات الإضافي من البصمة", error = ex.Message });
+        }
+    }
 }
